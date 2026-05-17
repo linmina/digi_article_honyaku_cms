@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js build artifacts
+.next/
+admin/.next/
+admin/tsconfig.tsbuildinfo
+
+# Output (generated translations, workspace, logs)
+output/
+workspace/
+admin/data/admin.db
+admin/data/admin.db-wal
+admin/data/admin.db-shm
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+.env.*
+*.json.bak
+service-account*.json
+**/credentials*.json
+db.json
+
+# Logs
+*.log
+
+# Editor
+.vscode/
+.idea/
+
+# Working notes
+memo.md
+notes/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Yarn lockfile mixing safety (keep yarn.lock, ignore pnpm/npm cruft)
+.pnp.*

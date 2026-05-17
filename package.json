@@ -1,0 +1,14 @@
+{
+  "name": "writer-check",
+  "version": "1.0.0",
+  "description": "GTNマガジン 記事作成・校閲・入稿 統合エージェント",
+  "private": true,
+  "scripts": {
+    "dev": "yarn --cwd admin dev",
+    "start": "yarn --cwd admin start",
+    "build": "yarn --cwd admin build"
+  },
+  "dependencies": {
+    "docx": "^9.6.1"
+  }
+}

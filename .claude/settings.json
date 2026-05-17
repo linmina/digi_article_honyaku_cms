@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Write(output/*)",
+      "Edit(output/*)",
+      "Bash(node scripts/generate-docx.js*)",
+      "Bash(python3 scripts/upload_gdrive.py*)",
+      "Bash(python3 scripts/update_article.py*)",
+      "Bash(mkdir -p output)",
+      "WebSearch",
+      "WebFetch"
+    ],
+    "deny": [
+      "Write(.secrets/*)",
+      "Write(.env)"
+    ]
+  }
+}

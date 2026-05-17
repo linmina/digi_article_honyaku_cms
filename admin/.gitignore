@@ -1,0 +1,6 @@
+node_modules/
+.next/
+data/admin.db
+data/admin.db-wal
+data/admin.db-shm
+.env.local

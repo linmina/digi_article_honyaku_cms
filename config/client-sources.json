@@ -1,0 +1,38 @@
+{
+  "client_name": "GTN（グローバルトラストネットワークス）",
+  "sources": [
+    {
+      "type": "web",
+      "name": "GTN公式サイト - お部屋探しサービス",
+      "url": "https://www.gtn.co.jp/business/realestate/room-search",
+      "description": "外国人専門の不動産仲介サービスの概要"
+    },
+    {
+      "type": "web",
+      "name": "GTN公式サイト - 家賃保証サービス",
+      "url": "https://www.gtn.co.jp/business/realestate/rent-guarantor",
+      "description": "外国人向け家賃保証サービスの詳細"
+    },
+    {
+      "type": "web",
+      "name": "BEST-ESTATE.jp",
+      "url": "https://www.best-estate.jp",
+      "description": "外国人向け物件検索プラットフォーム"
+    },
+    {
+      "type": "local_file",
+      "name": "GTN コンテンツDB",
+      "file_path": "data/content.md",
+      "description": "GTNの記事素材・データベース（Notion取得不可のためローカルファイルを参照）"
+    }
+  ],
+  "key_facts": {
+    "established": "2006年",
+    "partner_companies": "15,000社以上",
+    "annual_contracts": "20万件以上",
+    "supported_countries": "160か国以上",
+    "supported_languages": "24か国語",
+    "corporate_clients": "累計100社以上",
+    "service_scope": "住宅・通信・金融・生活相談のワンストップサービス"
+  }
+}

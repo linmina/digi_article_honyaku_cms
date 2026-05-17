@@ -1,0 +1,38 @@
+{
+  "media_name": "外国人向け賃貸メディア（GTN Magazine）",
+  "target_audience": {
+    "primary": "日本で部屋を借りたい外国人（留学生、就労者、技能実習生）",
+    "characteristics": [
+      "日本の賃貸システムに慣れていない",
+      "日本語があまり読めない人も多い",
+      "保証人、初期費用、審査、在留資格などに強い不安を持っている",
+      "「借りられるかどうか」が最大の関心事",
+      "日本人向け情報では役に立たないと感じている"
+    ],
+    "languages": ["日本語", "英語", "中国語", "韓国語", "ベトナム語", "ネパール語"]
+  },
+  "tone": {
+    "style": "です・ます調",
+    "perspective": "第三者視点（客観的かつ推奨感のある記述）",
+    "prohibited": {
+      "first_person": ["私", "当サイト", "私たち", "当社"],
+      "second_person": ["あなた", "貴社"],
+      "symbols": [":", ";", "*", "#", "【", "】", "→"],
+      "expressions": ["はじめまして", "この記事では", "いかがでしたか"]
+    }
+  },
+  "seo_settings": {
+    "target_word_count": {
+      "min": 6000,
+      "max": 8000
+    },
+    "output_format": "docx",
+    "font": "Yu Gothic",
+    "page_size": "A4"
+  },
+  "client_info": {
+    "company": "GTN（グローバルトラストネットワークス）",
+    "cta_url": "https://www.gtn.co.jp",
+    "property_search_url": "https://www.best-estate.jp"
+  }
+}
