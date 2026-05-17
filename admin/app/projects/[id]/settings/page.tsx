@@ -161,7 +161,13 @@ export default function ProjectSettingsPage() {
           </Section>
 
           <Section title="プロジェクトパス">
-            <Field label="writer_checkプロジェクトのパス" name="project_path" defaultValue={project.project_path} />
+            <Field
+              label="リポジトリパス"
+              name="project_path"
+              defaultValue={project.project_path}
+              placeholder="例: /Users/akira/work/git/digi_article_honyaku_cms"
+            />
+            <p className="text-xs text-gray-500 -mt-2 mb-1">runner が scripts/ や prompts/ を参照するために必要（このリポジトリの絶対パス）</p>
           </Section>
 
           <Section title="CMS設定">
@@ -310,10 +316,28 @@ export default function ProjectSettingsPage() {
             <input type="hidden" name="spreadsheet_display_columns" value={selectedColumns.join(',')} />
           </Section>
 
-          <Section title="プロンプト">
-            <Field label="記事タイトル＆構成生成プロンプト" name="prompt_structure" defaultValue={project.prompt_structure} textarea rows={8} />
-            <Field label="記事生成プロンプト" name="prompt_article" defaultValue={project.prompt_article} textarea rows={8} />
-            <Field label="校閲プロンプト" name="prompt_factcheck" defaultValue={project.prompt_factcheck} textarea rows={8} />
+          <Section title="プロンプト（プロジェクト既定値）">
+            <p className="text-xs text-gray-500 mb-3">
+              ここで設定したプロンプトはカテゴリ override が空のとき採用されます。
+              通常は空のままにし、`prompts/translation-system.md` / `prompts/translation-review.md`
+              （リポジトリ内の汎用ベース）をそのまま使うことを推奨。
+            </p>
+            <Field
+              label="翻訳プロンプト override"
+              name="prompt_translation"
+              defaultValue={project.prompt_translation}
+              textarea
+              rows={8}
+              placeholder="空欄なら prompts/translation-system.md を使用"
+            />
+            <Field
+              label="校閲プロンプト override"
+              name="prompt_review"
+              defaultValue={project.prompt_review}
+              textarea
+              rows={8}
+              placeholder="空欄なら prompts/translation-review.md を使用"
+            />
           </Section>
 
           <div className="flex justify-between">

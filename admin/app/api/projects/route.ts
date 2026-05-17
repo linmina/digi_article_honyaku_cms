@@ -26,8 +26,9 @@ export async function POST(req: NextRequest) {
       INSERT INTO projects (name, slug, description, cms_base_url, db_host, db_port, db_name, db_user, db_password,
         article_folder_id, factcheck_folder_id, review_folder_id, credentials_path, claude_model, project_path,
         prompt_structure, prompt_article, prompt_factcheck,
+        prompt_translation, prompt_review,
         spreadsheet_url, spreadsheet_sheet_name, spreadsheet_id_column, spreadsheet_display_columns)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       body.name, slug, body.description || '',
       body.cms_base_url || '', body.db_host || '', body.db_port || 3306,
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
       body.credentials_path || '',
       body.claude_model || 'claude-opus-4-6', body.project_path || '',
       body.prompt_structure || '', body.prompt_article || '', body.prompt_factcheck || '',
+      body.prompt_translation || '', body.prompt_review || '',
       body.spreadsheet_url || '', body.spreadsheet_sheet_name || '',
       body.spreadsheet_id_column || 'A', body.spreadsheet_display_columns || ''
     );
