@@ -204,9 +204,27 @@ export default function ProjectSettingsPage() {
           </Section>
 
           <Section title="Google Drive設定">
-            <Field label="記事フォルダID" name="article_folder_id" defaultValue={project.article_folder_id} />
-            <Field label="校閲フォルダID" name="factcheck_folder_id" defaultValue={project.factcheck_folder_id} />
-            <Field label="認証ファイルパス" name="credentials_path" defaultValue={project.credentials_path} />
+            <Field
+              label="翻訳作成 フォルダID"
+              name="article_folder_id"
+              defaultValue={project.article_folder_id}
+              placeholder="例: 1SYXlt3mWyxclvrZG5xXtt7IZ-f8kyihc"
+            />
+            <p className="text-xs text-gray-500 -mt-2 mb-1">翻訳済み英訳記事 (Phase 1 / Phase 3 の最終 Markdown) の Google Doc 保存先</p>
+            <Field
+              label="翻訳校閲 フォルダID"
+              name="review_folder_id"
+              defaultValue={project.review_folder_id || project.factcheck_folder_id}
+              placeholder="例: 14rGRTsfjRzy1KdCV0-oke5pLxnVcjFJ7"
+            />
+            <p className="text-xs text-gray-500 -mt-2 mb-1">校閲レポート (Phase 2) の Google Doc 保存先</p>
+            <Field
+              label="認証ファイルパス"
+              name="credentials_path"
+              defaultValue={project.credentials_path}
+              placeholder="/path/to/service-account.json"
+            />
+            <p className="text-xs text-gray-500 -mt-2 mb-1">Google サービスアカウント JSON 鍵ファイル（環境変数 DASHBOARD_GDRIVE_CREDENTIALS_PATH でも上書き可）</p>
           </Section>
 
           <Section title="Claude設定">

@@ -13,7 +13,12 @@ const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
-// Create tables
+// Repo root (one level up from admin/) — used for category prompt file paths
+const REPO_ROOT = path.resolve(__dirname, '..', '..');
+
+// ---------------------------------------------------------------------------
+// Schema (mirrors admin/lib/db.ts migrate() — kept in sync for fresh installs)
+// ---------------------------------------------------------------------------
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,12 +43,15 @@ db.exec(`
     db_password TEXT DEFAULT '',
     article_folder_id TEXT DEFAULT '',
     factcheck_folder_id TEXT DEFAULT '',
+    review_folder_id TEXT DEFAULT '',
     credentials_path TEXT DEFAULT '',
     claude_model TEXT DEFAULT 'claude-opus-4-6',
     project_path TEXT DEFAULT '',
     prompt_structure TEXT DEFAULT '',
     prompt_article TEXT DEFAULT '',
     prompt_factcheck TEXT DEFAULT '',
+    prompt_translation TEXT DEFAULT '',
+    prompt_review TEXT DEFAULT '',
     spreadsheet_url TEXT DEFAULT '',
     spreadsheet_sheet_name TEXT DEFAULT '',
     spreadsheet_id_column TEXT DEFAULT 'A',
@@ -60,15 +68,37 @@ db.exec(`
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS categories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    prompt_structure TEXT DEFAULT '',
+    prompt_article TEXT DEFAULT '',
+    prompt_factcheck TEXT DEFAULT '',
+    prompt_translation TEXT DEFAULT '',
+    prompt_review TEXT DEFAULT '',
+    prompt_translation_path TEXT DEFAULT '',
+    prompt_review_path TEXT DEFAULT '',
+    doc_check TEXT DEFAULT '',
+    doc_content TEXT DEFAULT '',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+  );
+
   CREATE TABLE IF NOT EXISTS articles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL,
     article_id INTEGER NOT NULL,
-    keywords TEXT NOT NULL,
+    keywords TEXT NOT NULL DEFAULT '',
+    source_url TEXT NOT NULL DEFAULT '',
+    apply_fix INTEGER NOT NULL DEFAULT 1,
     status TEXT NOT NULL DEFAULT 'pending',
     result_url TEXT DEFAULT '',
     article_doc_url TEXT DEFAULT '',
     factcheck_doc_url TEXT DEFAULT '',
+    review_doc_url TEXT DEFAULT '',
+    category_id INTEGER DEFAULT NULL,
     error_message TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -81,6 +111,7 @@ db.exec(`
     status TEXT NOT NULL DEFAULT 'pending',
     phase TEXT DEFAULT '',
     log TEXT DEFAULT '',
+    log_file TEXT DEFAULT '',
     pid INTEGER DEFAULT 0,
     started_at DATETIME,
     completed_at DATETIME,
@@ -89,7 +120,9 @@ db.exec(`
   );
 `);
 
-// Seed admin user
+// ---------------------------------------------------------------------------
+// Admin user
+// ---------------------------------------------------------------------------
 const adminHash = bcrypt.hashSync('admin', 10);
 const existing = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
 if (!existing) {
@@ -100,30 +133,84 @@ if (!existing) {
   console.log('Admin user already exists');
 }
 
-// Seed GTN project
+// ---------------------------------------------------------------------------
+// GTN Magazine project (default preset)
+// ---------------------------------------------------------------------------
+// Folder IDs provided by the GTN team (Drive 上で sub-folder の "翻訳作成" /
+// "翻訳校閲"). 認証 JSON は別途配置し、UI の「認証ファイルパス」または
+// 環境変数 DASHBOARD_GDRIVE_CREDENTIALS_PATH で渡す。
+const GTN_ARTICLE_FOLDER = '1SYXlt3mWyxclvrZG5xXtt7IZ-f8kyihc';  // 翻訳作成
+const GTN_REVIEW_FOLDER  = '14rGRTsfjRzy1KdCV0-oke5pLxnVcjFJ7';  // 翻訳校閲
+
+let gtnProjectId;
 const existingProject = db.prepare('SELECT id FROM projects WHERE slug = ?').get('gtn-magazine');
 if (!existingProject) {
-  db.prepare(`
-    INSERT INTO projects (name, slug, description, cms_base_url, db_host, db_port, db_name,
-      article_folder_id, factcheck_folder_id, credentials_path, project_path)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  const result = db.prepare(`
+    INSERT INTO projects (
+      name, slug, description, cms_base_url,
+      article_folder_id, factcheck_folder_id, review_folder_id,
+      credentials_path, project_path
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     'GTN Magazine',
     'gtn-magazine',
-    'GTNマガジン向けSEO記事の作成・校閲・入稿',
+    'GTNマガジン向け 日英翻訳・校閲・修正・CMS入稿',
     'https://cmsv1-dot-project-gtn-439607.an.r.appspot.com/admin/create/contents/gtnArticles',
-    '34.146.90.95',
-    3306,
-    'content',
-    '10LLkJVze1uTnM0oqjf8RZANfYVoO48E5',
-    '1N3vBLWdxa514l53gwaBtvGLwet3UfTNK',
-    '../key/nexus-notes-412407-ad4455fb74b4.json',
-    '/config/workspace/writer_check_set'
+    GTN_ARTICLE_FOLDER,
+    GTN_REVIEW_FOLDER,
+    GTN_REVIEW_FOLDER, // mirror legacy factcheck_folder_id
+    '', // credentials_path: set via UI or DASHBOARD_GDRIVE_CREDENTIALS_PATH env var
+    REPO_ROOT, // project_path = repo root so the runner can find scripts/ and prompts/
   );
-  console.log('Created GTN Magazine project');
+  gtnProjectId = Number(result.lastInsertRowid);
+  console.log(`Created GTN Magazine project (id=${gtnProjectId}) with translation folder IDs preset`);
 } else {
-  console.log('GTN Magazine project already exists');
+  gtnProjectId = Number(existingProject.id);
+  console.log(`GTN Magazine project already exists (id=${gtnProjectId})`);
+}
+
+// ---------------------------------------------------------------------------
+// GTN category — references the repo-level prompt override files
+// ---------------------------------------------------------------------------
+const promptTranslationPath = path.join(REPO_ROOT, 'categories', 'gtn-magazine', 'prompt_translation.md');
+const promptReviewPath = path.join(REPO_ROOT, 'categories', 'gtn-magazine', 'prompt_review.md');
+
+const existingCategory = db.prepare(
+  'SELECT id FROM categories WHERE project_id = ? AND name = ?'
+).get(gtnProjectId, 'GTN Magazine 標準');
+
+if (!existingCategory) {
+  db.prepare(`
+    INSERT INTO categories (
+      project_id, name, prompt_translation_path, prompt_review_path
+    ) VALUES (?, ?, ?, ?)
+  `).run(
+    gtnProjectId,
+    'GTN Magazine 標準',
+    promptTranslationPath,
+    promptReviewPath,
+  );
+  console.log(`Created GTN Magazine 標準 category referencing override prompts at categories/gtn-magazine/`);
+} else {
+  console.log('GTN Magazine 標準 category already exists');
+}
+
+// ---------------------------------------------------------------------------
+// Link admin user to GTN project
+// ---------------------------------------------------------------------------
+const adminId = db.prepare('SELECT id FROM users WHERE username = ?').get('admin').id;
+const linkExists = db.prepare(
+  'SELECT 1 FROM user_projects WHERE user_id = ? AND project_id = ?'
+).get(adminId, gtnProjectId);
+if (!linkExists) {
+  db.prepare('INSERT INTO user_projects (user_id, project_id) VALUES (?, ?)')
+    .run(adminId, gtnProjectId);
 }
 
 db.close();
-console.log('Seed complete!');
+console.log('\nSeed complete!');
+console.log('  - Login: http://localhost:60017/login  (admin / admin)');
+console.log('  - Project: GTN Magazine');
+console.log(`    - 翻訳作成 Drive: https://drive.google.com/drive/folders/${GTN_ARTICLE_FOLDER}`);
+console.log(`    - 翻訳校閲 Drive: https://drive.google.com/drive/folders/${GTN_REVIEW_FOLDER}`);
+console.log('  - Category: GTN Magazine 標準 (prompt override 適用済み)');
