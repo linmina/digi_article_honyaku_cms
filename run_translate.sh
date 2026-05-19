@@ -78,7 +78,18 @@ log() {
 error_log() { echo "ERROR: $1" >&2; }
 
 extract_web_link() {
-  echo "$1" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('web_link',''))" 2>/dev/null || echo ""
+  # upload_gdrive.py returns a JSON array ([{...}]) on success
+  echo "$1" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    if isinstance(d, list) and d:
+        print(d[0].get('web_link', ''))
+    elif isinstance(d, dict):
+        print(d.get('web_link', ''))
+except Exception:
+    pass
+" 2>/dev/null || echo ""
 }
 
 # ===== 前提条件チェック =====
@@ -191,7 +202,7 @@ EOF
       --file "${FINAL_MD}" \
       --folder-id "${GDRIVE_ARTICLE_FOLDER_ID}" \
       --credentials "${GDRIVE_CREDENTIALS_PATH}" \
-      --as-doc 2>&1)
+      --as-doc 2>/tmp/gdrive_art.err) || cat /tmp/gdrive_art.err
     ARTICLE_DOC_URL=$(extract_web_link "${ART_RESULT}")
     echo "翻訳記事 Google Doc: ${ARTICLE_DOC_URL}"
   fi
@@ -201,7 +212,7 @@ EOF
       --file "${REVIEW_MD}" \
       --folder-id "${GDRIVE_REVIEW_FOLDER_ID}" \
       --credentials "${GDRIVE_CREDENTIALS_PATH}" \
-      --as-doc 2>&1)
+      --as-doc 2>/tmp/gdrive_rev.err) || cat /tmp/gdrive_rev.err
     REVIEW_DOC_URL=$(extract_web_link "${REV_RESULT}")
     echo "校閲レポート Google Doc: ${REVIEW_DOC_URL}"
   fi

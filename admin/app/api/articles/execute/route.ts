@@ -360,8 +360,15 @@ export async function POST(req: NextRequest) {
             ],
             { encoding: 'utf-8' },
           );
+          // upload_gdrive.py returns a JSON array ([{...}]) — extract first element
           const parsed = JSON.parse(result);
-          return parsed.web_link || '';
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed[0].web_link || '';
+          }
+          if (parsed && typeof parsed === 'object') {
+            return parsed.web_link || '';
+          }
+          return '';
         } catch (e: any) {
           appendFileSync(logFilePath, `\n[gdrive-warning] upload failed: ${e.message}\n`, 'utf-8');
           return '';
