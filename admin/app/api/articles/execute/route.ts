@@ -357,6 +357,9 @@ export async function POST(req: NextRequest) {
               '--folder-id', folder,
               '--credentials', credsPath,
               '--as-doc',
+              // Convert ![alt](url) → 🖼 [filename | alt](url) before upload
+              // so Google Doc 変換時に画像原寸埋め込みでレイアウトが崩れない
+              '--text-images',
             ],
             { encoding: 'utf-8' },
           );

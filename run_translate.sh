@@ -202,7 +202,7 @@ EOF
       --file "${FINAL_MD}" \
       --folder-id "${GDRIVE_ARTICLE_FOLDER_ID}" \
       --credentials "${GDRIVE_CREDENTIALS_PATH}" \
-      --as-doc 2>/tmp/gdrive_art.err) || cat /tmp/gdrive_art.err
+      --as-doc --text-images 2>/tmp/gdrive_art.err) || cat /tmp/gdrive_art.err
     ARTICLE_DOC_URL=$(extract_web_link "${ART_RESULT}")
     echo "翻訳記事 Google Doc: ${ARTICLE_DOC_URL}"
   fi
@@ -212,7 +212,7 @@ EOF
       --file "${REVIEW_MD}" \
       --folder-id "${GDRIVE_REVIEW_FOLDER_ID}" \
       --credentials "${GDRIVE_CREDENTIALS_PATH}" \
-      --as-doc 2>/tmp/gdrive_rev.err) || cat /tmp/gdrive_rev.err
+      --as-doc --text-images 2>/tmp/gdrive_rev.err) || cat /tmp/gdrive_rev.err
     REVIEW_DOC_URL=$(extract_web_link "${REV_RESULT}")
     echo "校閲レポート Google Doc: ${REVIEW_DOC_URL}"
   fi
