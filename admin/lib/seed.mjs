@@ -142,6 +142,11 @@ if (!existing) {
 const GTN_ARTICLE_FOLDER = '1SYXlt3mWyxclvrZG5xXtt7IZ-f8kyihc';  // 翻訳作成
 const GTN_REVIEW_FOLDER  = '14rGRTsfjRzy1KdCV0-oke5pLxnVcjFJ7';  // 翻訳校閲
 
+// 認証 JSON は環境変数で渡せば seed が prefill する。未設定なら空のまま
+// （UI から後で入れる）。例:
+//   DEFAULT_GDRIVE_CREDENTIALS_PATH=/Users/akira/work/key/nexus-notes-412407-ad4455fb74b4.json yarn seed
+const DEFAULT_CREDENTIALS_PATH = process.env.DEFAULT_GDRIVE_CREDENTIALS_PATH || '';
+
 let gtnProjectId;
 const existingProject = db.prepare('SELECT id FROM projects WHERE slug = ?').get('gtn-magazine');
 if (!existingProject) {
@@ -159,7 +164,7 @@ if (!existingProject) {
     GTN_ARTICLE_FOLDER,
     GTN_REVIEW_FOLDER,
     GTN_REVIEW_FOLDER, // mirror legacy factcheck_folder_id
-    '', // credentials_path: set via UI or DASHBOARD_GDRIVE_CREDENTIALS_PATH env var
+    DEFAULT_CREDENTIALS_PATH, // set via DEFAULT_GDRIVE_CREDENTIALS_PATH env or admin UI later
     REPO_ROOT, // project_path = repo root so the runner can find scripts/ and prompts/
   );
   gtnProjectId = Number(result.lastInsertRowid);
@@ -213,4 +218,5 @@ console.log('  - Login: http://localhost:60017/login  (admin / admin)');
 console.log('  - Project: GTN Magazine');
 console.log(`    - 翻訳作成 Drive: https://drive.google.com/drive/folders/${GTN_ARTICLE_FOLDER}`);
 console.log(`    - 翻訳校閲 Drive: https://drive.google.com/drive/folders/${GTN_REVIEW_FOLDER}`);
+console.log(`    - 認証ファイルパス: ${DEFAULT_CREDENTIALS_PATH || '(未設定 — UI または DEFAULT_GDRIVE_CREDENTIALS_PATH で設定)'}`);
 console.log('  - Category: GTN Magazine 標準 (prompt override 適用済み)');

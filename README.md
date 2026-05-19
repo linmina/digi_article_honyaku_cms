@@ -82,13 +82,28 @@ cd admin && yarn install
 
 ### 3. Google Drive サービスアカウント
 
-サービスアカウント JSON 鍵ファイルを用意し、環境変数で渡す:
+GTN マガジン本番では `nexus-notes-412407-ad4455fb74b4.json`
+（client_email: `report@nexus-notes-412407.iam.gserviceaccount.com`）を使う。
+リポジトリには含めず、別パス（例: `../key/nexus-notes-412407-ad4455fb74b4.json`）に
+配置する。
 
-```bash
-export DASHBOARD_GDRIVE_CREDENTIALS_PATH=/path/to/sa.json
-export DASHBOARD_GDRIVE_ARTICLE_FOLDER_ID=<翻訳記事用フォルダID>
-export DASHBOARD_GDRIVE_REVIEW_FOLDER_ID=<校閲レポート用フォルダID>
-```
+設定方法は 3 通り（優先順）:
+
+1. **環境変数（runner / shell が pickup）** — 起動時の Drive アップロードに使う:
+   ```bash
+   export DASHBOARD_GDRIVE_CREDENTIALS_PATH=/Users/akira/work/key/nexus-notes-412407-ad4455fb74b4.json
+   ```
+
+2. **seed 時の prefill** — `yarn seed` で GTN Magazine project に自動セット:
+   ```bash
+   DEFAULT_GDRIVE_CREDENTIALS_PATH=/Users/akira/work/key/nexus-notes-412407-ad4455fb74b4.json yarn seed
+   ```
+
+3. **admin UI から手動入力** — `/projects/<id>/settings` の「認証ファイルパス」欄。
+
+GTN マガジン用フォルダ ID は seed.mjs に焼き込み済み:
+- 翻訳作成: `1SYXlt3mWyxclvrZG5xXtt7IZ-f8kyihc`
+- 翻訳校閲: `14rGRTsfjRzy1KdCV0-oke5pLxnVcjFJ7`
 
 未設定時は Drive アップロードがスキップされる（パイプラインは続行）。
 
