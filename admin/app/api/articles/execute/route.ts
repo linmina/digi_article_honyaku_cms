@@ -303,10 +303,20 @@ export async function POST(req: NextRequest) {
       appendFileSync(logFilePath, stderrLine, 'utf-8');
     });
 
+    // Catch-all wrapper — async listeners on EventEmitter silently swallow
+    // exceptions otherwise. In dev mode HMR can invalidate closure state
+    // mid-execution; we want any failure surfaced into the job log.
+    const safeAppendLog = (msg: string) => {
+      try {
+        appendFileSync(logFilePath, msg, 'utf-8');
+      } catch { /* ignore */ }
+    };
+
     child.on('close', async (code: number | null) => {
+     try {
       const finalStatus = code === 0 ? 'completed' : 'failed';
       const footer = `\n${'='.repeat(60)}\n完了: ${new Date().toISOString()}\nステータス: ${finalStatus}\n終了コード: ${code}\n${'='.repeat(60)}\n`;
-      appendFileSync(logFilePath, footer, 'utf-8');
+      safeAppendLog(footer);
       const dbLog = output.slice(-50000);
       db.prepare('UPDATE jobs SET status = ?, log = ?, completed_at = CURRENT_TIMESTAMP WHERE id = ?')
         .run(finalStatus, dbLog, jobId);
@@ -345,6 +355,12 @@ export async function POST(req: NextRequest) {
       const credsPath = process.env.DASHBOARD_GDRIVE_CREDENTIALS_PATH || project.credentials_path || '';
       const articleFolder = process.env.DASHBOARD_GDRIVE_ARTICLE_FOLDER_ID || project.article_folder_id || '';
       const reviewFolder = process.env.DASHBOARD_GDRIVE_REVIEW_FOLDER_ID || project.review_folder_id || project.factcheck_folder_id || '';
+      appendFileSync(
+        logFilePath,
+        `\n[gdrive-debug] credsPath=${credsPath ? 'set' : 'EMPTY'}, articleFolder=${articleFolder ? 'set' : 'EMPTY'}, reviewFolder=${reviewFolder ? 'set' : 'EMPTY'}\n` +
+          `[gdrive-debug] usable(fixedMd)=${usable(fixedMd)}, usable(reviewMd)=${usable(reviewMd)}, usable(finalMd)=${usable(finalMdPath)}\n`,
+        'utf-8',
+      );
 
       const uploadToDrive = (file: string, folder: string): string => {
         try {
@@ -379,19 +395,34 @@ export async function POST(req: NextRequest) {
       };
 
       if (credsPath && articleFolder && usable(finalMdPath)) {
+        appendFileSync(logFilePath, `[gdrive-debug] uploading article: ${finalMdPath}\n`, 'utf-8');
         const webLink = uploadToDrive(finalMdPath, articleFolder);
+        appendFileSync(logFilePath, `[gdrive-debug] article webLink=${webLink || 'EMPTY'}\n`, 'utf-8');
         if (webLink) {
           db.prepare('UPDATE articles SET article_doc_url = ? WHERE id = ?')
             .run(webLink, article_row_id);
         }
+      } else {
+        appendFileSync(logFilePath, `[gdrive-debug] SKIP article upload (cond failed)\n`, 'utf-8');
       }
       if (credsPath && reviewFolder && usable(reviewMd)) {
+        appendFileSync(logFilePath, `[gdrive-debug] uploading review: ${reviewMd}\n`, 'utf-8');
         const webLink = uploadToDrive(reviewMd, reviewFolder);
+        appendFileSync(logFilePath, `[gdrive-debug] review webLink=${webLink || 'EMPTY'}\n`, 'utf-8');
         if (webLink) {
           db.prepare('UPDATE articles SET review_doc_url = ?, factcheck_doc_url = ? WHERE id = ?')
             .run(webLink, webLink, article_row_id);
         }
+      } else {
+        appendFileSync(logFilePath, `[gdrive-debug] SKIP review upload (cond failed)\n`, 'utf-8');
       }
+     } catch (err: any) {
+       // Surface ALL failures into the log; HMR-induced closure invalidation
+       // (Next.js dev) or other async errors would otherwise be silent.
+       safeAppendLog(
+         `\n[close-handler-error] ${err?.stack || err?.message || String(err)}\n`,
+       );
+     }
     });
 
     child.on('error', (err: Error) => {
