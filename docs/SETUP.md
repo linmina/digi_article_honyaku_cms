@@ -61,10 +61,90 @@ yarn install
 cd ..
 ```
 
+## 4.5. 環境変数の永続化（推奨）
+
+毎回 `export` するのは面倒なので `.env` ファイルに書いておく。
+2 箇所に置く必要あり:
+
+### 4.5-a. リポジトリルートの `.env`
+
+`run_translate.sh` が自動 source する。
+
+```bash
+cd /Users/akira/work/git/digi_article_honyaku_cms
+cp .env.example .env
+chmod 600 .env  # 推奨
+vim .env  # 実値に書き換え
+```
+
+中身（`.env.example` 参照）:
+```
+DASHBOARD_GDRIVE_CREDENTIALS_PATH=/Users/akira/work/key/nexus-notes-412407-ad4455fb74b4.json
+DASHBOARD_GDRIVE_ARTICLE_FOLDER_ID=1SYXlt3mWyxclvrZG5xXtt7IZ-f8kyihc
+DASHBOARD_GDRIVE_REVIEW_FOLDER_ID=14rGRTsfjRzy1KdCV0-oke5pLxnVcjFJ7
+DEFAULT_GDRIVE_CREDENTIALS_PATH=/Users/akira/work/key/nexus-notes-412407-ad4455fb74b4.json
+```
+
+### 4.5-b. `admin/.env.local`
+
+Next.js が起動時に自動 load する。`yarn dev` / `yarn start` で有効。
+
+```bash
+cd admin
+cp .env.local.example .env.local
+chmod 600 .env.local
+vim .env.local
+```
+
+中身:
+```
+DASHBOARD_GDRIVE_CREDENTIALS_PATH=/Users/akira/work/key/nexus-notes-412407-ad4455fb74b4.json
+DASHBOARD_GDRIVE_ARTICLE_FOLDER_ID=1SYXlt3mWyxclvrZG5xXtt7IZ-f8kyihc
+DASHBOARD_GDRIVE_REVIEW_FOLDER_ID=14rGRTsfjRzy1KdCV0-oke5pLxnVcjFJ7
+
+# 本番では必ず固定値（未設定だと yarn dev 起動毎にセッション無効化）
+DASHBOARD_SECRET_KEY=<生成例: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
+```
+
+### 4.5-c. シェル rc にグローバル設定（任意、複数 repo で共有したい場合）
+
+`~/.zshrc` / `~/.bashrc` に追記してターミナル開く度に有効化。
+ただし上の `.env` 2 つでセットアップ完結するので不要。
+
+```bash
+# ~/.zshrc に追記する場合の例
+export DASHBOARD_GDRIVE_CREDENTIALS_PATH=/Users/akira/work/key/nexus-notes-412407-ad4455fb74b4.json
+export DASHBOARD_GDRIVE_ARTICLE_FOLDER_ID=1SYXlt3mWyxclvrZG5xXtt7IZ-f8kyihc
+export DASHBOARD_GDRIVE_REVIEW_FOLDER_ID=14rGRTsfjRzy1KdCV0-oke5pLxnVcjFJ7
+```
+
+### 優先順（複数箇所に設定したとき）
+
+1. **シェル `export`** (最優先) — そのシェルセッション内
+2. **`admin/.env.local`** — Next.js admin が読む
+3. **リポジトリルート `.env`** — `run_translate.sh` が読む
+4. **admin DB の `credentials_path`** — admin UI 設定経由、runner の post-processing が fallback として使う
+
+`.env` と admin UI 設定で食い違っても、admin UI 設定の方が永続的だが
+環境変数が起動時に上書き優先する仕様。
+
+---
+
 ## 5. データベースを seed（初期データ投入）
 
-GTN Magazine project + 標準カテゴリ + admin ユーザーを一発で作る:
+GTN Magazine project + 標準カテゴリ + admin ユーザーを一発で作る。
+手順 4.5-a で `.env` を作っているなら自動で `DEFAULT_GDRIVE_CREDENTIALS_PATH`
+を取り込める:
 
+```bash
+# リポジトリルートで .env を source してから admin に入る
+cd /Users/akira/work/git/digi_article_honyaku_cms
+set -a; . ./.env; set +a
+cd admin
+yarn seed
+```
+
+もしくは 1 行で:
 ```bash
 cd admin
 DEFAULT_GDRIVE_CREDENTIALS_PATH=/Users/akira/work/key/nexus-notes-412407-ad4455fb74b4.json \

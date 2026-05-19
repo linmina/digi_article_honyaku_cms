@@ -23,6 +23,17 @@
 
 set -euo pipefail
 
+# ===== .env 自動読み込み =====
+# 同階層に .env があれば読み込む（chmod 600 推奨、.gitignore 済み）
+PROJECT_DIR_EARLY="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "${PROJECT_DIR_EARLY}/.env" ]; then
+  set -a
+  # shellcheck disable=SC1090
+  . "${PROJECT_DIR_EARLY}/.env"
+  set +a
+  echo "Loaded env from ${PROJECT_DIR_EARLY}/.env" >&2
+fi
+
 # ===== 引数パース =====
 MODEL="claude-opus-4-6"
 CATEGORY=""

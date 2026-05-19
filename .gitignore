@@ -21,6 +21,9 @@ Thumbs.db
 # Environment / secrets
 .env
 .env.*
+# Allow committed templates
+!.env.example
+!.env.*.example
 *.json.bak
 service-account*.json
 **/credentials*.json
